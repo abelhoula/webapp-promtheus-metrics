@@ -1,4 +1,4 @@
-# Prometheus Example App
+# Prometheus Sample App
 
 This example app serves as an example of how one can easily instrument HTTP handlers with [Prometheus][prometheus] metrics. It uses the Prometheus [go client][client-golang] to create a new Prometheus registry.
 
