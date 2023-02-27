@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"log"
 	"net/http"
@@ -11,6 +12,11 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
+
+type Response struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}
 
 var (
 	appVersion string
@@ -28,8 +34,9 @@ var (
 	}, []string{"code", "method"})
 
 	httpRequestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "http_request_duration_seconds",
-		Help: "Duration of all HTTP requests",
+		Name:    "http_request_duration_seconds",
+		Help:    "Duration of all HTTP requests",
+		Buckets: []float64{0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5},
 	}, []string{"code", "handler", "method"})
 )
 
@@ -49,10 +56,17 @@ func main() {
 
 	foundHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello from example application."))
+		w.Write([]byte("Hello from sample promttp impl."))
 	})
 	notfoundHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp := &Response{Code: 400, Msg: "notFound"}
+		jsonResp, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+			return
+		}
 		w.WriteHeader(http.StatusNotFound)
+		w.Write(jsonResp)
 	})
 	internalErrorHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -62,9 +76,21 @@ func main() {
 		httpRequestDuration.MustCurryWith(prometheus.Labels{"handler": "found"}),
 		promhttp.InstrumentHandlerCounter(httpRequestsTotal, foundHandler),
 	)
+	httpok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Start a new session by incrementing the activeSessions gauge
+		resp := &Response{Code: 200, Msg: "ok!"}
+		jsonResp, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write(jsonResp)
+	})
 
 	mux := http.NewServeMux()
 	mux.Handle("/", foundChain)
+	mux.Handle("/healthz", httpok)
 	mux.Handle("/err", promhttp.InstrumentHandlerCounter(httpRequestsTotal, notfoundHandler))
 	mux.Handle("/internal-err", promhttp.InstrumentHandlerCounter(httpRequestsTotal, internalErrorHandler))
 	mux.Handle("/metrics", promhttp.HandlerFor(r, promhttp.HandlerOpts{}))
