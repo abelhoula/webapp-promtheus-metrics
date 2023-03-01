@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: prometheus-sample-app
-        image: quay.io/abelhoula/prometheus-sample-app:v0.1.0
+        image: ghcr.io/abelhoula/webapp-promtheus-metrics:main
         ports:
         - name: web
           containerPort: 8080

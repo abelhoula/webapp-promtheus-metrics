@@ -1,14 +1,16 @@
-# Default values for prom-app.
+# Default values for webapp-promtheus-metrics.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+app:
+  name: promhttp
 replicaCount: 1
 
 image:
-  repository: quay.io/abelhoula/prometheus-sample-app
-  pullPolicy: IfNotPresent
+  repository: ghcr.io/abelhoula/webapp-promtheus-metrics
+  pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "main"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -38,7 +40,7 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 8080
+  port: 80
 
 ingress:
   enabled: false
@@ -56,23 +58,27 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-resources:
+resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  limits:
-     cpu: 20m
-     memory: 25Mi
-  requests:
-    cpu: 10m
-    memory: 12Mi
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
 
 autoscaling:
   enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
+  prometheus:
+    enabled: false
+    serverAddress: http://prom:9090
+    metricName: ""
+    threshold: ""
+    qry: ""
+
   # targetMemoryUtilizationPercentage: 80
 
 nodeSelector: {}
@@ -80,3 +86,38 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+
+prometheus:
+  enabled: false
+  podMonitor:
+  # Enables PodMonitor creation for the Prometheus Operator
+    enabled: false
+    interval:
+    scrapeTimeout:
+    namespace:
+    additionalLabels: {}
+    relabelings: []
+  serviceMonitor:
+      # Enables ServiceMonitor creation for the Prometheus Operator
+      enabled: false
+      jobLabel:
+      targetLabels: []
+      podTargetLabels: []
+      port: metrics
+      targetPort:
+      interval:
+      namespace:
+      scrapeTimeout:
+      relabellings: []
+      additionalLabels: {}
+
+# -- Custom labels to add into metadata
+additionalLabels:
+  {}
+  # foo: bar
+
+# -- Custom annotations to add into metadata
+additionalAnnotations:
+  {}
+  # foo: bar

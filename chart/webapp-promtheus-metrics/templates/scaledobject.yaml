@@ -1,0 +1,29 @@
+{{- if .Values.autoscaling.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "webapp-promtheus-metrics.fullname" . }}
+  labels:
+    {{- include "webapp-promtheus-metrics.labels" . | nindent 4 }}
+spec:
+  pollingInterval:  30    # Optional. Default: 30 seconds
+  cooldownPeriod:   300   # Optional. Default: 300 seconds
+  idleReplicaCount: 0     # Optional. Default: ignored, must be less than minReplicaCount
+  maxReplicaCount: 3      # Required
+  minReplicaCount: 1      # Required
+  scaleTargetRef:
+    apiVersion: apps/v1 # Optional. Default: apps/v1
+    kind: Deployment    # Optional. Default: Deployment
+    name: {{ include "webapp-promtheus-metrics.fullname" . }}
+  {{- if .Values.autoscaling.prometheus.enabled }}
+  triggers:
+  - type: prometheus
+    metadata:
+      serverAddress: {{ .Values.autoscaling.prometheus.serverAddress }}
+      metricName: {{ .Values.autoscaling.prometheus.metricName }}
+      threshold: {{ .Values.autoscaling.prometheus.threshold }}
+      query: {{ .Values.autoscaling.prometheus.qry }}
+  {{- end }}
+  advanced:
+    restoreToOriginalReplicaCount: true
+{{- end }}
