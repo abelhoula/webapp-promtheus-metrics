@@ -1,6 +1,0 @@
-apiVersion: v2
-name: prom-app
-description: A Helm chart to deploy prometheus-sample-app to a  Kubernetes cluster
-type: application
-version: 0.1.0
-appVersion: "0.1.0"

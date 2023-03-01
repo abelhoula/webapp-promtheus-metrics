@@ -1,0 +1,48 @@
+{{- if and .Values.prometheus.enabled .Values.prometheus.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "webapp-promtheus-metrics.fullname" . }}
+  annotations:
+    {{- toYaml .Values.additionalAnnotations | nindent 4 }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.app.name }}
+    {{- include "webapp-promtheus-metrics.labels" . | nindent 4 }}
+  {{- with .Values.prometheus.serviceMonitor.namespace }}
+  namespace: {{ . }}
+  {{- end }}
+spec:
+  {{- with .Values.prometheus.serviceMonitor.jobLabel }}
+  jobLabel: {{ . }}
+  {{- end }}
+  {{- with .Values.prometheus.serviceMonitor.targetLabels }}
+  targetLabels:
+  {{ toYaml . | indent 4 }}
+  {{- end }}
+  {{- with .Values.prometheus.serviceMonitor.podTargetLabels }}
+  podTargetLabels:
+  {{ toYaml . | indent 4 }}
+  {{- end }}
+  endpoints:
+  - port: {{ .Values.prometheus.serviceMonitor.port }}
+    {{- with .Values.prometheus.serviceMonitor.targetPort }}
+    targetPort: {{ . }}
+    {{- end }}
+    path: /metrics
+    {{- with .Values.prometheus.serviceMonitor.interval }}
+    interval: {{ . }}
+    {{- end }}
+    {{- with .Values.prometheus.serviceMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ . }}
+    {{- end }}
+    {{- with .Values.prometheus.serviceMonitor.relabellings }}
+    relabelings:
+    {{ toYaml . | indent 6 }}
+    {{- end }}
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.app.name }}
+{{- end }}

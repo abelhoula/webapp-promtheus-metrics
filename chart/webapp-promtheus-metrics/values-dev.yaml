@@ -1,0 +1,77 @@
+# Default values for webapp-promtheus-metrics.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/abelhoula/webapp-promtheus-metrics
+  pullPolicy: Always
+  tag: "main"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: true
+  prometheus:
+    enabled: true
+    serverAddress: http://prom:9090
+    metricName: "http_requests_total"
+    threshold: "2"
+    qry: "sum(http_requests_total{code=404})"
+
+
+prometheus:
+  enabled: true
+  podMonitor:
+  # Enables PodMonitor creation for the Prometheus Operator
+    enabled: true
+    interval:
+    scrapeTimeout:
+    namespace:
+    additionalLabels: {}
+    relabelings: []
+  serviceMonitor:
+      # Enables ServiceMonitor creation for the Prometheus Operator
+      enabled: true
+      jobLabel:
+      targetLabels: []
+      podTargetLabels: []
+      port: web
+      targetPort:
+      interval:
+      namespace:
+      scrapeTimeout:
+      relabellings: []
+      additionalLabels: {}

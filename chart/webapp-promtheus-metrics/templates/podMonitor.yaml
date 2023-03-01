@@ -1,0 +1,35 @@
+{{- if and .Values.prometheus.enabled .Values.prometheus.podMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "webapp-promtheus-metrics.fullname" . }}
+  annotations:
+    {{- toYaml .Values.additionalAnnotations | nindent 4 }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.app.name }}
+    {{- include "webapp-promtheus-metrics.labels" . | nindent 4 }}
+  {{- with .Values.prometheus.podMonitor.namespace }}
+  namespace: {{ . }}
+  {{- end }}
+spec:
+  podMetricsEndpoints:
+  - port: web
+    path: /metrics
+    honorLabels: true
+    {{- with .Values.prometheus.podMonitor.interval }}
+    interval: {{ . }}
+    {{- end }}
+    {{- with .Values.prometheus.podMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ . }}
+    {{- end }}
+    {{- with .Values.prometheus.podMonitor.relabelings }}
+    relabelings:
+{{ toYaml . | indent 4 }}
+    {{- end }}
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.app.name }}
+{{- end }}
